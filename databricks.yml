@@ -1,0 +1,121 @@
+# ===========================================================================
+# IEDR Data Platform — Databricks Asset Bundle Definition
+# ===========================================================================
+# Defines DLT pipeline configuration deployed across dev/test/prod.
+# Same code, different targets. Deploy with:
+#   databricks bundle validate -t dev
+#   databricks bundle deploy -t dev
+#   databricks bundle run iedr_dlt_pipeline -t dev
+# ===========================================================================
+
+bundle:
+  name: iedr-data-platform
+
+workspace:
+  root_path: /Workspace/Users/${workspace.current_user.userName}/.bundle/${bundle.name}/${bundle.target}
+
+variables:
+  landing_path:
+    description: "Base path for raw utility data landing zone"
+    default: "abfss://landing@iedrdatalake.dfs.core.windows.net"
+
+resources:
+  pipelines:
+    iedr_dlt_pipeline:
+      name: "IEDR DLT Pipeline [${bundle.target}]"
+      catalog: "iedr_${bundle.target}"
+      target: "iedr_${bundle.target}"
+      development: false
+      continuous: false
+      photon: true
+      channel: "CURRENT"
+      edition: "ADVANCED"
+
+      libraries:
+        # Bronze Layer — Raw Ingestion
+        - notebook:
+            path: pipelines/bronze/dlt_bronze_ingestion.py
+        # Silver Layer — Per-Utility Cleansing
+        - notebook:
+            path: pipelines/silver/dlt_silver_circuits.py
+        - notebook:
+            path: pipelines/silver/dlt_silver_install_der.py
+        - notebook:
+            path: pipelines/silver/dlt_silver_planned_der.py
+        # Gold Layer — Unified Star Schema
+        - notebook:
+            path: pipelines/gold/dlt_gold_dim_feeder.py
+        - notebook:
+            path: pipelines/gold/dlt_gold_fact_der.py
+        - notebook:
+            path: pipelines/gold/dlt_gold_dimensions.py
+        # Platinum Layer — API-Ready Views
+        - notebook:
+            path: pipelines/platinum/dlt_platinum_api_views.py
+        - notebook:
+            path: pipelines/platinum/dlt_platinum_dq_report.py
+
+      configuration:
+        "iedr.landing_path": ${var.landing_path}
+        "iedr.environment": ${bundle.target}
+
+      clusters:
+        - label: "default"
+          autoscale:
+            min_workers: 1
+            max_workers: 4
+            mode: "ENHANCED"
+
+      notifications:
+        - on_start:
+            - iedr-pipeline-alerts@esource.com
+          on_failure:
+            - iedr-pipeline-alerts@esource.com
+          on_flow_failure:
+            - iedr-data-team@esource.com
+
+# ===========================================================================
+# Environment Targets
+# ===========================================================================
+targets:
+  dev:
+    default: true
+    workspace:
+      host: ${DATABRICKS_HOST_DEV}
+    variables:
+      landing_path: "abfss://dev@iedrdatalake.dfs.core.windows.net"
+    resources:
+      pipelines:
+        iedr_dlt_pipeline:
+          development: true
+          clusters:
+            - label: "default"
+              autoscale:
+                min_workers: 1
+                max_workers: 2
+
+  test:
+    workspace:
+      host: ${DATABRICKS_HOST_TEST}
+    variables:
+      landing_path: "abfss://test@iedrdatalake.dfs.core.windows.net"
+    resources:
+      pipelines:
+        iedr_dlt_pipeline:
+          development: false
+
+  prod:
+    workspace:
+      host: ${DATABRICKS_HOST_PROD}
+    variables:
+      landing_path: "abfss://prod@iedrdatalake.dfs.core.windows.net"
+    resources:
+      pipelines:
+        iedr_dlt_pipeline:
+          development: false
+          photon: true
+          clusters:
+            - label: "default"
+              autoscale:
+                min_workers: 2
+                max_workers: 8
