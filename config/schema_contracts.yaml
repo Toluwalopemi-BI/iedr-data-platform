@@ -1,0 +1,68 @@
+# ===========================================================================
+# IEDR Schema Contracts — Expected Column Definitions per Layer
+# ===========================================================================
+# CI pipeline validates that DLT table definitions produce columns matching
+# these contracts. Prevents accidental column renames or type changes.
+# ===========================================================================
+
+gold:
+  dim_feeder:
+    columns:
+      - {name: global_feeder_id, type: string, nullable: false}
+      - {name: feeder_id, type: string, nullable: false}
+      - {name: utility_id, type: string, nullable: false}
+      - {name: feeder_name, type: string, nullable: true}
+      - {name: voltage_kv, type: double, nullable: true}
+      - {name: max_hosting_capacity_mw, type: double, nullable: true}
+      - {name: min_hosting_capacity_mw, type: double, nullable: true}
+      - {name: hca_refresh_date, type: timestamp, nullable: true}
+      - {name: segment_count, type: long, nullable: true}
+      - {name: has_hosting_capacity, type: boolean, nullable: true}
+
+  fact_installed_der:
+    columns:
+      - {name: global_der_id, type: string, nullable: false}
+      - {name: der_id, type: string, nullable: false}
+      - {name: feeder_id, type: string, nullable: true}
+      - {name: utility_id, type: string, nullable: false}
+      - {name: der_type, type: string, nullable: false}
+      - {name: nameplate_rating_kw, type: double, nullable: true}
+      - {name: is_hybrid, type: boolean, nullable: true}
+      - {name: der_status, type: string, nullable: false}
+
+  fact_planned_der:
+    columns:
+      - {name: global_der_id, type: string, nullable: true}
+      - {name: der_id, type: string, nullable: true}
+      - {name: feeder_id, type: string, nullable: true}
+      - {name: utility_id, type: string, nullable: false}
+      - {name: der_type, type: string, nullable: false}
+      - {name: nameplate_rating_kw, type: double, nullable: true}
+      - {name: der_status, type: string, nullable: false}
+
+platinum:
+  v_feeders_by_hc:
+    columns:
+      - {name: global_feeder_id, type: string, nullable: false}
+      - {name: feeder_id, type: string, nullable: false}
+      - {name: utility_id, type: string, nullable: false}
+      - {name: max_hosting_capacity_mw, type: double, nullable: true}
+      - {name: has_hosting_capacity, type: boolean, nullable: true}
+
+  v_der_by_feeder:
+    columns:
+      - {name: der_id, type: string, nullable: true}
+      - {name: feeder_id, type: string, nullable: true}
+      - {name: utility_id, type: string, nullable: false}
+      - {name: der_type, type: string, nullable: true}
+      - {name: nameplate_rating_kw, type: double, nullable: true}
+      - {name: der_status, type: string, nullable: true}
+
+  v_feeder_map_summary:
+    columns:
+      - {name: global_feeder_id, type: string, nullable: false}
+      - {name: feeder_id, type: string, nullable: false}
+      - {name: utility_id, type: string, nullable: false}
+      - {name: installed_der_count, type: long, nullable: true}
+      - {name: planned_der_count, type: long, nullable: true}
+      - {name: total_der_count, type: long, nullable: true}
