@@ -1,0 +1,63 @@
+# ===========================================================================
+# IEDR DER Type Mapping — Canonical Technology Lookup
+# ===========================================================================
+# Maps utility-specific DER type codes to canonical names.
+# Used by Silver layer transformations.
+# ===========================================================================
+
+# U1 wide-format column name → canonical
+u1_column_to_canonical:
+  SolarPV: "Solar"
+  EnergyStorageSystem: "Energy Storage"
+  Wind: "Wind"
+  MicroTurbine: "Micro Turbine"
+  SynchronousGenerator: "Synchronous Generator"
+  InductionGenerator: "Induction Generator"
+  FarmWaste: "Farm Waste"
+  FuelCell: "Fuel Cell"
+  CombinedHeatandPower: "Combined Heat & Power"
+  GasTurbine: "Gas Turbine"
+  Hydro: "Hydro"
+  InternalCombustionEngine: "Internal Combustion Engine"
+  SteamTurbine: "Steam Turbine"
+  Other: "Other"
+
+# U1 ProjectType codes → canonical
+u1_project_type_to_canonical:
+  RESPHOTO: "Solar"
+  NRESPHOTO: "Solar"
+  ComWind: "Wind"
+  COMWIND: "Wind"
+  FARMWIND: "Wind"
+  FarmWind: "Wind"
+  NRESWIND: "Wind"
+  RESWIND: "Wind"
+  PVESS: "Solar + Storage"
+  PVWind: "Solar + Wind"
+  ESS: "Energy Storage"
+  CHP: "Combined Heat & Power"
+  HYDRO: "Hydro"
+  FuelCell: "Fuel Cell"
+  FARMWASTE: "Farm Waste"
+  BIOGAS: "Bio Gas"
+  langas: "Landfill Gas"
+  GASTurbine: "Gas Turbine"
+  COAL: "Coal"
+  Nuclear: "Nuclear"
+  Transmission: "Transmission"
+  "OpCo Owned": "Utility Owned"
+
+# U2 DER_TYPE values → canonical (most map directly)
+u2_type_to_canonical:
+  "Solar": "Solar"
+  "Energy Storage": "Energy Storage"
+  "Wind": "Wind"
+  "Natural Gas": "Natural Gas"
+  "Hydro": "Hydro"
+  "Fuel Cell": "Fuel Cell"
+  "Landfill Gas": "Landfill Gas"
+  "Bio Gas": "Bio Gas"
+  "Steam": "Steam Turbine"
+  "Geo-Thermal": "Geo-Thermal"
+  "Battery Add-On": "Energy Storage"
+  "Combined Heat & Power": "Combined Heat & Power"
