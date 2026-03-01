@@ -1,0 +1,114 @@
+# ===========================================================================
+# IEDR Utility Registry — Column Mappings & Source Configuration
+# ===========================================================================
+# This file drives the config-driven onboarding of new utilities.
+# Adding Utility 3 = add a new entry here, not a code change.
+# ===========================================================================
+
+utilities:
+
+  utility_1:
+    name: "Utility 1"
+    region: "Upstate NY"
+    refresh_cadence: "monthly"
+    is_active: true
+
+    circuits:
+      source_format: "csv"
+      granularity: "segment"  # Must aggregate to feeder in Gold
+      column_map:
+        section_id: "NYHCPV_csv_NSECTION"
+        feeder_id: "NYHCPV_csv_NFEEDER"
+        feeder_name: "NYHCPV_csv_FFEEDER"
+        voltage_kv: "NYHCPV_csv_NVOLTAGE"
+        segment_max_hc_mw: "NYHCPV_csv_NMAXHC"
+        feeder_max_hc_mw: "NYHCPV_csv_FMAXHC"
+        feeder_min_hc_mw: "NYHCPV_csv_FMINHC"
+        hca_date: "NYHCPV_csv_FHCADATE"
+        circuit_id: "Circuits_Phase3_CIRCUIT"
+        num_phases: "Circuits_Phase3_NUMPHASES"
+        map_color: "NYHCPV_csv_NMAPCOLOR"
+
+    installed_der:
+      source_format: "csv"
+      der_type_format: "wide"  # 14 boolean technology columns
+      column_map:
+        project_id: "ProjectID"
+        project_type: "ProjectType"
+        nameplate_rating: "NamePlateRating"
+        nameplate_unit: "watts"  # Needs conversion to kW in Silver
+        feeder_id: "ProjectCircuitID"
+        is_hybrid: "Hybrid"
+      technology_columns:
+        - SolarPV
+        - EnergyStorageSystem
+        - Wind
+        - MicroTurbine
+        - SynchronousGenerator
+        - InductionGenerator
+        - FarmWaste
+        - FuelCell
+        - CombinedHeatandPower
+        - GasTurbine
+        - Hydro
+        - InternalCombustionEngine
+        - SteamTurbine
+        - Other
+
+    planned_der:
+      source_format: "csv"
+      der_type_format: "wide"
+      column_map:
+        project_id: "ProjectID"
+        project_type: "ProjectType"
+        project_status: "ProjectStatus"
+        nameplate_rating: "NamePlateRating"
+        nameplate_unit: "watts"
+        feeder_id: "ProjectCircuitID"
+        in_service_date: "InServiceDate"
+        completion_date: "CompletionDate"
+        is_hybrid: "Hybrid"
+
+  utility_2:
+    name: "Utility 2"
+    region: "Downstate NY"
+    refresh_cadence: "monthly"
+    is_active: true
+
+    circuits:
+      source_format: "csv"
+      granularity: "feeder"  # Already feeder-level
+      column_map:
+        feeder_id: "Master_CDF"
+        voltage_kv: "feeder_voltage"
+        feeder_max_hc_mw: "feeder_max_hc"
+        feeder_min_hc_mw: "feeder_min_hc"
+        dg_since_refresh: "feeder_dg_connected_since_refresh"
+        hca_date: "hca_refresh_date"
+        map_color: "color"
+
+    installed_der:
+      source_format: "csv"
+      der_type_format: "single_column"  # Single DER_TYPE column
+      column_map:
+        der_id: "DER_ID"
+        der_type: "DER_TYPE"
+        nameplate_rating: "DER_NAMEPLATE_RATING"
+        nameplate_unit: "kw"
+        feeder_id: "DER_INTERCONNECTION_LOCATION"
+        service_address: "SERVICE_STREET_ADDRESS"
+        interconnection_cost: "INTERCONNECTION_COST"
+
+    planned_der:
+      source_format: "csv"
+      der_type_format: "single_column"
+      column_map:
+        der_type: "DER_TYPE"
+        nameplate_rating: "DER_NAMEPLATE_RATING"
+        nameplate_unit: "kw"
+        feeder_id: "DER_INTERCONNECTION_LOCATION"
+        request_id: "INTERCONNECTION_QUEUE_REQUEST_ID"
+        queue_position: "INTERCONNECTION_QUEUE_POSITION"
+        planned_date: "PLANNED_INSTALLATION_DATE"
+        status: "DER_STATUS"
+        status_rationale: "DER_STATUS_RATIONALE"
