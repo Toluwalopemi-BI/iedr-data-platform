@@ -1,1 +1,1 @@
-"""Gold layer — Unified star schema."""
+"""IEDR Gold Layer — Cross-utility unified star schema."""
