@@ -1,8 +1,8 @@
 # ===========================================================================
 # IEDR CD — Deploy to PROD on tagged release to main
 # ===========================================================================
-# SAFETY: Requires manual approval via GitHub Environment protection rules.
-# Does NOT auto-trigger DLT run — operator manually starts pipeline.
+# Requires manual approval via GitHub Environment protection rules.
+# Does NOT auto-trigger DLT run — operator confirms in Databricks UI.
 # ===========================================================================
 name: IEDR Deploy to PROD
 
@@ -15,7 +15,7 @@ jobs:
   deploy-prod:
     name: "Deploy to PRODUCTION"
     runs-on: ubuntu-latest
-    environment: production  # Requires manual approval
+    environment: production    # Requires manual approval
     steps:
       - uses: actions/checkout@v4
 
@@ -35,27 +35,15 @@ jobs:
           DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST_PROD }}
           DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN_PROD }}
 
-      # NOTE: DLT pipeline is NOT auto-triggered in PROD.
-      # Operator must manually start the pipeline after validating deployment.
+      # NOTE: Intentionally does NOT auto-trigger DLT run.
+      # Operator reviews deployment in Databricks UI, then triggers manually.
 
-      - name: Post deployment summary
-        if: always()
+      - name: Post-deploy notification
+        if: success()
         run: |
-          echo "## PRODUCTION Deployment Summary" >> $GITHUB_STEP_SUMMARY
-          echo "- **Tag:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Deployer:** ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Status:** ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "> **Action Required:** Manually trigger the DLT pipeline in the Databricks PROD workspace." >> $GITHUB_STEP_SUMMARY
-
-      - name: Notify Slack
-        if: always()
-        uses: slackapi/slack-github-action@v1.26.0
-        with:
-          payload: |
-            {
-              "text": "IEDR PROD Deploy: ${{ job.status }}\nTag: ${{ github.ref_name }}\nBy: ${{ github.actor }}"
-            }
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          echo "✅ PROD deployment successful."
+          echo "Deployed ref: ${{ github.ref }}"
+          echo "Commit: ${{ github.sha }}"
+          echo ""
+          echo "⚠️  DLT pipeline NOT auto-triggered."
+          echo "   Operator must trigger manually in Databricks workspace."
