@@ -1,0 +1,61 @@
+# ===========================================================================
+# IEDR CD — Deploy to PROD on tagged release to main
+# ===========================================================================
+# SAFETY: Requires manual approval via GitHub Environment protection rules.
+# Does NOT auto-trigger DLT run — operator manually starts pipeline.
+# ===========================================================================
+name: IEDR Deploy to PROD
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+
+jobs:
+  deploy-prod:
+    name: "Deploy to PRODUCTION"
+    runs-on: ubuntu-latest
+    environment: production  # Requires manual approval
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Databricks CLI
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/databricks/setup-cli/main/install.sh | sh
+
+      - name: Validate bundle
+        run: databricks bundle validate -t prod
+        env:
+          DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST_PROD }}
+          DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN_PROD }}
+
+      - name: Deploy to PROD
+        run: databricks bundle deploy -t prod
+        env:
+          DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST_PROD }}
+          DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN_PROD }}
+
+      # NOTE: DLT pipeline is NOT auto-triggered in PROD.
+      # Operator must manually start the pipeline after validating deployment.
+
+      - name: Post deployment summary
+        if: always()
+        run: |
+          echo "## PRODUCTION Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- **Tag:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Deployer:** ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Status:** ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "> **Action Required:** Manually trigger the DLT pipeline in the Databricks PROD workspace." >> $GITHUB_STEP_SUMMARY
+
+      - name: Notify Slack
+        if: always()
+        uses: slackapi/slack-github-action@v1.26.0
+        with:
+          payload: |
+            {
+              "text": "IEDR PROD Deploy: ${{ job.status }}\nTag: ${{ github.ref_name }}\nBy: ${{ github.actor }}"
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
