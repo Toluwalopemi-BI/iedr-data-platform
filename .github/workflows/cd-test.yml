@@ -9,7 +9,7 @@ on:
 
 jobs:
   deploy-test:
-    name: "Deploy to TEST Environment"
+    name: "Deploy to TEST"
     runs-on: ubuntu-latest
     environment: test
     steps:
@@ -31,18 +31,13 @@ jobs:
           DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST_TEST }}
           DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN_TEST }}
 
-      - name: Trigger DLT Pipeline (Integration Test)
-        run: |
-          databricks bundle run iedr_dlt_pipeline -t test
+      - name: Trigger DLT Pipeline Run
+        run: databricks bundle run iedr_dlt_pipeline -t test
         env:
           DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST_TEST }}
           DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN_TEST }}
 
-      - name: Post deployment summary
-        if: always()
+      - name: Notify on failure
+        if: failure()
         run: |
-          echo "## TEST Deployment Summary" >> $GITHUB_STEP_SUMMARY
-          echo "- **Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Deployer:** ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Status:** ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
+          echo "::error::TEST deployment failed. Check Databricks workspace."
