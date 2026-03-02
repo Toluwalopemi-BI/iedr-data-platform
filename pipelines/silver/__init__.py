@@ -1,1 +1,1 @@
-"""Silver layer — Per-utility cleansing."""
+"""IEDR Silver Layer — Per-utility cleansing and typing."""
