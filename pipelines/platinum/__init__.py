@@ -1,1 +1,1 @@
-"""Platinum layer — API-ready views."""
+"""IEDR Platinum Layer — API-ready materialized views."""
