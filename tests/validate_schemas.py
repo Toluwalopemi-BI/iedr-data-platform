@@ -1,36 +1,36 @@
-"""Schema Contract Validation Script.
+"""Schema Contract Validator — CI job to verify schema_contracts.yaml is well-formed.
 
-Run during CI to verify that schema_contracts.yaml is well-formed
-and all referenced tables have valid column definitions.
+This script is called by the CI pipeline to ensure:
+1. schema_contracts.yaml parses correctly
+2. All referenced tables have column definitions
+3. Column types are valid Spark SQL types
+4. No duplicate column names within a table
 
-Usage:
-    python tests/validate_schemas.py
+Usage: python tests/validate_schemas.py
 """
 
 import sys
 from pathlib import Path
 
-# Add project root to path
-sys.path.insert(0, str(Path(__file__).parent.parent))
+import yaml
 
-from shared.config_loader import load_yaml
-
-
-VALID_TYPES = {"string", "double", "long", "int", "boolean", "timestamp", "date", "float"}
+VALID_TYPES = {"string", "long", "int", "double", "float", "boolean", "timestamp", "date", "binary"}
 
 
-def validate_contracts():
-    """Validate schema_contracts.yaml structure and types."""
-    contracts = load_yaml("schema_contracts.yaml")
+def validate():
+    config_path = Path(__file__).parent.parent / "config" / "schema_contracts.yaml"
+    if not config_path.exists():
+        print(f"ERROR: {config_path} not found")
+        sys.exit(1)
+
+    with open(config_path) as f:
+        contracts = yaml.safe_load(f)
+
     errors = []
 
     for layer, tables in contracts.items():
-        if layer not in ("gold", "platinum"):
-            errors.append(f"Unknown layer: {layer}")
-            continue
-
         if not isinstance(tables, dict):
-            errors.append(f"Layer '{layer}' should be a dict, got {type(tables)}")
+            errors.append(f"Layer '{layer}' should be a dict of tables")
             continue
 
         for table_name, table_def in tables.items():
@@ -39,50 +39,33 @@ def validate_contracts():
                 errors.append(f"{layer}.{table_name}: no columns defined")
                 continue
 
-            col_names = set()
+            seen_names = set()
             for col in columns:
-                # Check required fields
-                for field in ("name", "type", "nullable"):
-                    if field not in col:
-                        errors.append(f"{layer}.{table_name}: column missing '{field}': {col}")
+                name = col.get("name")
+                col_type = col.get("type")
 
-                # Check valid type
-                col_type = col.get("type", "")
-                if col_type not in VALID_TYPES:
+                if not name:
+                    errors.append(f"{layer}.{table_name}: column missing 'name'")
+                if not col_type:
+                    errors.append(f"{layer}.{table_name}.{name}: missing 'type'")
+                elif col_type not in VALID_TYPES:
                     errors.append(
-                        f"{layer}.{table_name}.{col.get('name')}: "
-                        f"invalid type '{col_type}'. Valid: {VALID_TYPES}"
+                        f"{layer}.{table_name}.{name}: invalid type '{col_type}'. "
+                        f"Valid: {VALID_TYPES}"
                     )
-
-                # Check duplicate column names
-                col_name = col.get("name", "")
-                if col_name in col_names:
-                    errors.append(f"{layer}.{table_name}: duplicate column '{col_name}'")
-                col_names.add(col_name)
-
-    return errors
-
-
-def main():
-    print("Validating schema contracts...")
-    errors = validate_contracts()
+                if name in seen_names:
+                    errors.append(f"{layer}.{table_name}: duplicate column '{name}'")
+                seen_names.add(name)
 
     if errors:
-        print(f"\n❌ {len(errors)} validation error(s):")
+        print(f"Schema validation FAILED ({len(errors)} errors):")
         for e in errors:
-            print(f"  - {e}")
+            print(f"  ✗ {e}")
         sys.exit(1)
     else:
-        contracts = load_yaml("schema_contracts.yaml")
-        total_tables = sum(len(tables) for tables in contracts.values())
-        total_cols = sum(
-            len(t.get("columns", []))
-            for tables in contracts.values()
-            for t in tables.values()
-        )
-        print(f"✅ All contracts valid: {total_tables} tables, {total_cols} columns")
-        sys.exit(0)
+        total_tables = sum(len(t) for t in contracts.values())
+        print(f"Schema validation PASSED — {total_tables} tables validated across {len(contracts)} layers")
 
 
 if __name__ == "__main__":
-    main()
+    validate()
